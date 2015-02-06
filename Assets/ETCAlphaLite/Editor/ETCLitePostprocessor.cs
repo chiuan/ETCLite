@@ -18,17 +18,19 @@ using Object = UnityEngine.Object;
 [InitializeOnLoad]
 public class ETCTexturePostprocessor
 {
-    public struct targetFolder
+    public class targetFolder
     {
         public string path;
         public string etcShader;
         public string iosShader;
+        public int alphaMaxSize;
 
-        public targetFolder(string p, string ES, string IS)
+        public targetFolder(string p, string ES, string IS, int ams)
         {
             this.path = p;
             this.etcShader = ES;
             this.iosShader = IS;
+            this.alphaMaxSize = ams;
         }
     }
 
@@ -52,6 +54,7 @@ public class ETCTexturePostprocessor
         public Material mat;
         public Shader etcShader; //use for etc texture
         public Shader iosShader; //use for ios texture format & other platforms.
+        public int alphaMaxSize = 1024;
     }
 
     static ETCTexturePostprocessor()
@@ -119,7 +122,19 @@ public class ETCTexturePostprocessor
                     etc.SourcePath = AssetDatabase.GetAssetPath(one.mainTexture);
                     etc.SoureTextureImporter = AssetImporter.GetAtPath(etc.SourcePath) as TextureImporter;
                     etc.AlphaPath = Path.GetDirectoryName(etc.SourcePath) + "/" + Path.GetFileNameWithoutExtension(etc.SourcePath) + "_Alpha.png";
+                    AssetImporter im = AssetImporter.GetAtPath(etc.AlphaPath);
+                    etc.AlphaTextureImporter = im != null ? im as TextureImporter : null;
                     etc.AlphaFormat = 0;
+                    etc.alphaMaxSize = needProcessPaths[i].alphaMaxSize;
+
+                    //FIXME:check if etc texture is ready before,dont need change again for time save.
+                    if (etc.SoureTextureImporter.textureFormat == TextureImporterFormat.ETC_RGB4
+                        && etc.AlphaTextureImporter != null
+                        && etc.AlphaTextureImporter.textureFormat == TextureImporterFormat.ETC_RGB4
+                        && etc.AlphaTextureImporter.maxTextureSize == needProcessPaths[i].alphaMaxSize)
+                    {
+                        continue;
+                    }
 
                     AssetDatabase.DeleteAsset(etc.AlphaPath);
                     AssetDatabase.Refresh();
@@ -127,7 +142,9 @@ public class ETCTexturePostprocessor
                     //do process immediate.
                     ProcessETC(etc, dontChanged);
                     //release the memory
+                    etc = null;
                     Resources.UnloadUnusedAssets();
+                    System.GC.GetTotalMemory(true);
                     System.GC.Collect();
                 }
             }
@@ -172,6 +189,7 @@ public class ETCTexturePostprocessor
 
                     //release the memory
                     Resources.UnloadUnusedAssets();
+                    System.GC.GetTotalMemory(true);
                     System.GC.Collect();
                 }
             }
@@ -228,21 +246,17 @@ public class ETCTexturePostprocessor
             }
             etcInfo.AlphaTexture.SetPixels32(color32S);
             etcInfo.AlphaTexture.Apply(false);
-            string fileName = Application.dataPath.Substring(0, Application.dataPath.Length - 6) +
-                etcInfo.AlphaPath;
+            string fileName = Application.dataPath.Substring(0, Application.dataPath.Length - 6) + etcInfo.AlphaPath;
             File.WriteAllBytes(fileName, etcInfo.AlphaTexture.EncodeToPNG());
             while (!File.Exists(fileName)) ;
             AssetDatabase.Refresh(ImportAssetOptions.Default);
-            etcInfo.AlphaTextureImporter =
-                AssetImporter.GetAtPath(etcInfo.AlphaPath) as TextureImporter;
-            while (etcInfo.AlphaTextureImporter == null)
-            {
-                etcInfo.AlphaTextureImporter =
-                    AssetImporter.GetAtPath(etcInfo.AlphaPath) as TextureImporter;
-            }
+            etcInfo.AlphaTextureImporter = AssetImporter.GetAtPath(etcInfo.AlphaPath) as TextureImporter;
             etcInfo.AlphaTextureImporter.textureType = TextureImporterType.Advanced;
             etcInfo.AlphaTextureImporter.mipmapEnabled = false;
-            etcInfo.AlphaTextureImporter.SetPlatformTextureSettings("Android", 2048, TextureImporterFormat.ETC_RGB4);
+            etcInfo.AlphaTextureImporter.textureFormat = TextureImporterFormat.ETC_RGB4;
+            etcInfo.AlphaTextureImporter.maxTextureSize = etcInfo.alphaMaxSize;
+            etcInfo.AlphaTextureImporter.SetPlatformTextureSettings("Android", etcInfo.alphaMaxSize, TextureImporterFormat.ETC_RGB4);
+            etcInfo.SoureTextureImporter.textureFormat = TextureImporterFormat.ETC_RGB4;
             etcInfo.SoureTextureImporter.SetPlatformTextureSettings("Android", 2048, TextureImporterFormat.ETC_RGB4);
 
             AssetDatabase.ImportAsset(etcInfo.SourcePath);
@@ -349,11 +363,15 @@ class EditorSelectedFolderWindow : EditorWindow
         "tk2d/BlendVertexColor",
 	};
 
+    ///all max size of this alpha texture.
+    public string[] sizes = new string[] { "64", "256", "512", "1024", "2048" };
+
     static EditorSelectedFolderWindow window;
     public int selEtcIndex = 0;
     public int selIOSIndex = 0;
     private string selFolder = "";
     private bool dontChanged = false;
+    private int sizeIndex = 3;
 
     public static void Create(string selFolder)
     {
@@ -387,12 +405,14 @@ class EditorSelectedFolderWindow : EditorWindow
         //if dont need changed?
         GUILayout.Space(15);
         dontChanged = GUILayout.Toggle(dontChanged, "Dont Use ETC and Use True Color.", GUILayout.Height(25));
+        GUILayout.Space(10);
+        sizeIndex = GUILayout.SelectionGrid(sizeIndex, sizes, 6, GUILayout.MinHeight(50));
 
         GUILayout.Space(25);
         if (GUILayout.Button("Process", GUILayout.Height(40)))
         {
             ETCTexturePostprocessor.ChangeETC(new ETCTexturePostprocessor.targetFolder[]{
-				new ETCTexturePostprocessor.targetFolder(selFolder, etcShaders[selEtcIndex], iOSShaders[selIOSIndex])
+				new ETCTexturePostprocessor.targetFolder(selFolder, etcShaders[selEtcIndex], iOSShaders[selIOSIndex],int.Parse(sizes[sizeIndex]))
 			}, dontChanged);
             window.Close();
         }
