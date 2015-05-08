@@ -97,7 +97,7 @@ public class ETCTexturePostprocessor
     public static void ChangeETC(targetFolder[] needProcessPaths, bool dontChanged = false)
     {
         Debug.Log("ETC Auto At Platform : " + EditorUserBuildSettings.activeBuildTarget);
-        if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.Android && EditorUserBuildSettings.activeBuildTarget != BuildTarget.iPhone)
+        if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.Android && EditorUserBuildSettings.activeBuildTarget != BuildTarget.iOS)
         {
             Debug.LogWarning("Not the iOS or Android platform wont changed to ETC format. ");
             return;
@@ -149,7 +149,7 @@ public class ETCTexturePostprocessor
                 }
             }
         }
-        else if (EditorUserBuildSettings.activeBuildTarget == BuildTarget.iPhone)
+        else if (EditorUserBuildSettings.activeBuildTarget == BuildTarget.iOS)
         {
             for (int i = 0; i < needProcessPaths.Length; i++)
             {
