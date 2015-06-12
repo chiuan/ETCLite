@@ -89,6 +89,24 @@ public class ETCTexturePostprocessor
         EditorSelectedFolderWindow.Create(selFolder);
     }
 
+    [MenuItem("Assets/Convert to ETC", false, 1000)]
+    private static void ConvertMaterial()
+    {
+        string filePath = AssetDatabase.GetAssetPath(Selection.activeObject);
+        Material mat = AssetDatabase.LoadMainAssetAtPath(filePath) as Material;
+        ChangeETC(mat, mat.shader.name + "(ETC)", 1024, false);
+    }
+
+    [MenuItem("Assets/Convert to ETC", true)]
+    private static bool ValidateConvertMaterial()
+    {
+        if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.Android) return false;
+
+        string path = AssetDatabase.GetAssetPath(Selection.activeObject);
+        if (path.EndsWith(".mat")) return true;
+        return false;
+    }
+
     /// <summary>
     /// do etc changed for the folder's materials
     /// </summary>
@@ -113,39 +131,7 @@ public class ETCTexturePostprocessor
                 foreach (Material one in temps)
                 {
                     if (one.mainTexture == null) continue;
-
-                    EtcAlphaInfo etc = new EtcAlphaInfo();
-                    etc.mat = one;
-                    etc.etcShader = Shader.Find(needProcessPaths[i].etcShader);
-                    etc.iosShader = Shader.Find(needProcessPaths[i].iosShader);
-                    etc.SourceTexture = one.mainTexture as Texture2D;
-                    etc.SourcePath = AssetDatabase.GetAssetPath(one.mainTexture);
-                    etc.SoureTextureImporter = AssetImporter.GetAtPath(etc.SourcePath) as TextureImporter;
-                    etc.AlphaPath = Path.GetDirectoryName(etc.SourcePath) + "/" + Path.GetFileNameWithoutExtension(etc.SourcePath) + "_Alpha.png";
-                    AssetImporter im = AssetImporter.GetAtPath(etc.AlphaPath);
-                    etc.AlphaTextureImporter = im != null ? im as TextureImporter : null;
-                    etc.AlphaFormat = 0;
-                    etc.alphaMaxSize = needProcessPaths[i].alphaMaxSize;
-
-                    //FIXME:check if etc texture is ready before,dont need change again for time save.
-                    if (etc.SoureTextureImporter.textureFormat == TextureImporterFormat.ETC_RGB4
-                        && etc.AlphaTextureImporter != null
-                        && etc.AlphaTextureImporter.textureFormat == TextureImporterFormat.ETC_RGB4
-                        && etc.AlphaTextureImporter.maxTextureSize == needProcessPaths[i].alphaMaxSize)
-                    {
-                        continue;
-                    }
-
-                    AssetDatabase.DeleteAsset(etc.AlphaPath);
-                    AssetDatabase.Refresh();
-
-                    //do process immediate.
-                    ProcessETC(etc, dontChanged);
-                    //release the memory
-                    etc = null;
-                    Resources.UnloadUnusedAssets();
-                    System.GC.GetTotalMemory(true);
-                    System.GC.Collect();
+                    ChangeETC(one, needProcessPaths[i].etcShader, needProcessPaths[i].alphaMaxSize, dontChanged);
                 }
             }
         }
@@ -165,37 +151,89 @@ public class ETCTexturePostprocessor
                 foreach (Material one in temps)
                 {
                     if (one.mainTexture == null) continue;
-
-                    EtcAlphaInfo etc = new EtcAlphaInfo();
-                    etc.mat = one;
-                    etc.etcShader = Shader.Find(needProcessPaths[i].etcShader);
-                    etc.iosShader = Shader.Find(needProcessPaths[i].iosShader);
-                    etc.SourceTexture = one.mainTexture as Texture2D;
-                    etc.SourcePath = AssetDatabase.GetAssetPath(one.mainTexture);
-                    etc.SoureTextureImporter = AssetImporter.GetAtPath(etc.SourcePath) as TextureImporter;
-                    etc.AlphaPath = Path.GetDirectoryName(etc.SourcePath) + "/" + Path.GetFileNameWithoutExtension(etc.SourcePath) + "_Alpha.png";
-                    etc.AlphaFormat = 1;
-
-                    AssetDatabase.DeleteAsset(etc.AlphaPath);
-                    AssetDatabase.Refresh();
-
-                    //change immediate fix memory release.
-                    etc.SoureTextureImporter.isReadable = true;
-                    etc.SoureTextureImporter.mipmapEnabled = false;
-                    etc.SoureTextureImporter.SetPlatformTextureSettings("iPhone", 2048, dontChanged ? TextureImporterFormat.RGBA32 : TextureImporterFormat.PVRTC_RGBA4);
-                    AssetDatabase.ImportAsset(etc.SourcePath);
-                    //change the material use etc
-                    etc.mat.shader = etc.iosShader;
-
-                    //release the memory
-                    Resources.UnloadUnusedAssets();
-                    System.GC.GetTotalMemory(true);
-                    System.GC.Collect();
+                    ChangeETC(one, needProcessPaths[i].iosShader, needProcessPaths[i].alphaMaxSize, dontChanged);
                 }
             }
         }
 
         Debug.Log("ETC auto process end.");
+    }
+
+    public static void ChangeETC(Material mat,string shaderName,int alphaMaxSize,bool dontChanged)
+    {
+        if(mat == null)
+        {
+            return;
+        }
+
+        Shader shader = Shader.Find(shaderName);
+        if (shader == null)
+        {
+            Debug.LogError("cant change etc cant found etc shader:" + shaderName);
+            return;
+        }
+
+        if (EditorUserBuildSettings.activeBuildTarget == BuildTarget.Android)
+        {
+            EtcAlphaInfo etc = new EtcAlphaInfo();
+            etc.mat = mat;
+            etc.etcShader = shader;
+            etc.SourceTexture = mat.mainTexture as Texture2D;
+            etc.SourcePath = AssetDatabase.GetAssetPath(mat.mainTexture);
+            etc.SoureTextureImporter = AssetImporter.GetAtPath(etc.SourcePath) as TextureImporter;
+            etc.AlphaPath = Path.GetDirectoryName(etc.SourcePath) + "/" + Path.GetFileNameWithoutExtension(etc.SourcePath) + "_Alpha.png";
+            AssetImporter im = AssetImporter.GetAtPath(etc.AlphaPath);
+            etc.AlphaTextureImporter = im != null ? im as TextureImporter : null;
+            etc.AlphaFormat = 0;
+            etc.alphaMaxSize = alphaMaxSize;
+
+            //FIXME:check if etc texture is ready before,dont need change again for time save.
+            if (etc.SoureTextureImporter.textureFormat == TextureImporterFormat.ETC_RGB4
+                && etc.AlphaTextureImporter != null
+                && etc.AlphaTextureImporter.textureFormat == TextureImporterFormat.ETC_RGB4
+                && etc.AlphaTextureImporter.maxTextureSize == alphaMaxSize)
+            {
+                return;
+            }
+
+            AssetDatabase.DeleteAsset(etc.AlphaPath);
+            AssetDatabase.Refresh();
+
+            //do process immediate.
+            ProcessETC(etc, dontChanged);
+            //release the memory
+            etc = null;
+            Resources.UnloadUnusedAssets();
+            System.GC.GetTotalMemory(true);
+            System.GC.Collect();
+        }
+        else if(EditorUserBuildSettings.activeBuildTarget == BuildTarget.iOS)
+        {
+            EtcAlphaInfo etc = new EtcAlphaInfo();
+            etc.mat = mat;
+            etc.iosShader = shader;
+            etc.SourceTexture = mat.mainTexture as Texture2D;
+            etc.SourcePath = AssetDatabase.GetAssetPath(mat.mainTexture);
+            etc.SoureTextureImporter = AssetImporter.GetAtPath(etc.SourcePath) as TextureImporter;
+            etc.AlphaPath = Path.GetDirectoryName(etc.SourcePath) + "/" + Path.GetFileNameWithoutExtension(etc.SourcePath) + "_Alpha.png";
+            etc.AlphaFormat = 1;
+
+            AssetDatabase.DeleteAsset(etc.AlphaPath);
+            AssetDatabase.Refresh();
+
+            //change immediate fix memory release.
+            etc.SoureTextureImporter.isReadable = true;
+            etc.SoureTextureImporter.mipmapEnabled = false;
+            etc.SoureTextureImporter.SetPlatformTextureSettings("iPhone", alphaMaxSize, dontChanged ? TextureImporterFormat.RGBA32 : TextureImporterFormat.PVRTC_RGBA4);
+            AssetDatabase.ImportAsset(etc.SourcePath);
+            //change the material use etc
+            etc.mat.shader = etc.iosShader;
+
+            //release the memory
+            Resources.UnloadUnusedAssets();
+            System.GC.GetTotalMemory(true);
+            System.GC.Collect();
+        }
     }
 
     /// <summary>
@@ -218,8 +256,7 @@ public class ETCTexturePostprocessor
                 return;
             }
 
-            etcInfo.AlphaTexture = new Texture2D(etcInfo.SourceTexture.width,
-                                                           etcInfo.SourceTexture.height, TextureFormat.RGBA32, false);
+            etcInfo.AlphaTexture = new Texture2D(etcInfo.SourceTexture.width,etcInfo.SourceTexture.height, TextureFormat.RGBA32, false);
             Color32[] color32S = etcInfo.AlphaTexture.GetPixels32();
             Color32[] srcColor32S = etcInfo.SourceTexture.GetPixels32();
 
