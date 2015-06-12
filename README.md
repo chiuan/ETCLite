@@ -3,33 +3,38 @@ auto using etc+alpha texture in android platform,automatic handler for you!
 
 ------------------------------------CN-------------------------------------------
 
-NOTE:Ê¹ÓÃµ¼ÈëshaderÇë×¢Òâ£¬ÊÇ·ñ¸²¸ÇÁËÖ®Ç°NGUIµÄshader
+NOTE:ä½¿ç”¨å¯¼å…¥shaderè¯·æ³¨æ„ï¼Œæ˜¯å¦è¦†ç›–äº†ä¹‹å‰NGUIçš„shader
 
-1¡¢Ê¹ÓÃÇë´ò¿ªEditor/ETCTexturePostprocessor.csÎÄ¼ş£¬ĞŞ¸Ä ADD TARGET FOLDER TO AUTO USE ETC + ALPHA ÏÂÃæµÄÎÄ¼şÄ¿Â¼×Ô¶¯´¦ÀíĞÅÏ¢
+1ã€ä½¿ç”¨è¯·æ‰“å¼€Editor/ETCTexturePostprocessor.csæ–‡ä»¶ï¼Œä¿®æ”¹ ADD TARGET FOLDER TO AUTO USE ETC + ALPHA ä¸‹é¢çš„æ–‡ä»¶ç›®å½•è‡ªåŠ¨å¤„ç†ä¿¡æ¯
 
-2¡¢ÇĞ»»Æ½Ì¨Android¡¢iOS½«×Ô¶¯¶ÔÉèÖÃµÄÄ¿Â¼½øĞĞÌùÍ¼×ª»»
+2ã€åˆ‡æ¢å¹³å°Androidã€iOSå°†è‡ªåŠ¨å¯¹è®¾ç½®çš„ç›®å½•è¿›è¡Œè´´å›¾è½¬æ¢
 
-3¡¢ÔÚ¹¤¾ßÀ¸TextureSetting/ETC/¿ÉÒÔÊÖ¶¯×ª»»£¨È«²¿ÉèÖÃ¡¢Ñ¡ÔñÄ¿Â¼×ª»»£©
+3ã€åœ¨å·¥å…·æ TextureSetting/ETC/å¯ä»¥æ‰‹åŠ¨è½¬æ¢ï¼ˆå…¨éƒ¨è®¾ç½®ã€é€‰æ‹©ç›®å½•è½¬æ¢ï¼‰
 
-4¡¢ÔÚEditor/ETCTexturePostprocessor.csµÄEditorSelectedFolderWindowÖĞ¿ÉÒÔÊäÈëÒ»Ğ©shaderÁĞ±íÒÔ¹©Ñ¡Ôñ
+4ã€åœ¨Editor/ETCTexturePostprocessor.csçš„EditorSelectedFolderWindowä¸­å¯ä»¥è¾“å…¥ä¸€äº›shaderåˆ—è¡¨ä»¥ä¾›é€‰æ‹©
 
-5¡¢ÊÖ¶¯Ä¿Â¼×ª»»´°¿ÚÔö¼ÓDontChangedÑ¡Ïî½«Ê¹ÓÃRGBA32Õæ²ÊÌùÍ¼
+5ã€æ‰‹åŠ¨ç›®å½•è½¬æ¢çª—å£å¢åŠ DontChangedé€‰é¡¹å°†ä½¿ç”¨RGBA32çœŸå½©è´´å›¾
 
 version 1.0
-- FIX:×Ô¶¯ÉèÖÃ´°¿ÚÁĞ±í¸ß¶È²»¶Ô
-- FIX:Èç¹ûÄ¿Â¼Í¼Æ¬¹ı¶àµ¼ÖÂµÄÄÚ´æ±©ÕÇÎÊÌâ
+- FIX:è‡ªåŠ¨è®¾ç½®çª—å£åˆ—è¡¨é«˜åº¦ä¸å¯¹
+- FIX:å¦‚æœç›®å½•å›¾ç‰‡è¿‡å¤šå¯¼è‡´çš„å†…å­˜æš´æ¶¨é—®é¢˜
+- 
+
+version 1.1
+- ADD:å¢åŠ ChangeETCä¼ å…¥æè´¨çƒè½¬åŒ–
+- ADD:å³é”®æè´¨çƒç›´æ¥è½¬åŒ–
 
 ------------------------------------ENG-------------------------------------------
 
 NOTE:care for importing this package,sure to not convert the NGUI orignal shaders.
 
-1¡¢you can modify "ADD TARGET FOLDER TO AUTO USE ETC + ALPHA" under Editor/ETCTexturePostprocessor.cs£¬add automatic folder.
+1ã€you can modify "ADD TARGET FOLDER TO AUTO USE ETC + ALPHA" under Editor/ETCTexturePostprocessor.csï¼Œadd automatic folder.
 
-2¡¢after change the Editor Platform to Android or iOS will trigger automatic handler.
+2ã€after change the Editor Platform to Android or iOS will trigger automatic handler.
 
-3¡¢you can click topbar button:TextureSetting/ETC/ change selection folder by yourself.
+3ã€you can click topbar button:TextureSetting/ETC/ change selection folder by yourself.
 
-4¡¢you can modify "EditorSelectedFolderWindow" under Editor/ETCTexturePostprocessor.cs for new shader list!
+4ã€you can modify "EditorSelectedFolderWindow" under Editor/ETCTexturePostprocessor.cs for new shader list!
 
-5¡¢in editor windows you can toggle the "DontChange" to reconvert use RGBA32.
+5ã€in editor windows you can toggle the "DontChange" to reconvert use RGBA32.
 
